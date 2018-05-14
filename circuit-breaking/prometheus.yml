@@ -1,0 +1,16 @@
+global:
+  scrape_interval:     5s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: 'slow_cooker'
+    static_configs:
+    - targets:
+      - 'slow_cooker:8505'
+  - job_name: 'servers'
+    static_configs:
+    - targets:
+      - 'server1:8501'
+      - 'server2:8501'
+      - 'server3:8501'
+      - 'server4:8501'
+      - 'server5:8501'

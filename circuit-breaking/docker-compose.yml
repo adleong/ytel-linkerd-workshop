@@ -1,0 +1,72 @@
+version: '2'
+
+services:
+
+  # 5 simple backend servers written in Golang, one of which has a 60% success
+  # rate
+  server1:
+    build: .
+    networks:
+      default:
+        aliases:
+         - server
+
+  server2:
+    build: .
+    networks:
+      default:
+        aliases:
+         - server
+
+  server3:
+    build: .
+    networks:
+      default:
+        aliases:
+         - server
+
+  server4:
+    build: .
+    networks:
+      default:
+        aliases:
+         - server
+
+  server5:
+    build: .
+    command: -success-rate=0.6
+    networks:
+      default:
+        aliases:
+         - server
+
+  # Prometheus instance for collecing metrics
+  prometheus:
+    image: prom/prometheus:v1.4.1
+    volumes:
+      - ./prometheus.yml:/prometheus/prometheus.yml:ro
+    command: >
+      -config.file=/prometheus/prometheus.yml
+      -storage.local.retention=12h
+    ports:
+      - 9090:9090
+
+  # Grafana instance for viewing Prometheus metrics
+  grafana:
+    build:
+      context: .
+      dockerfile: Dockerfile-grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+
+  # Slow Cooker load generator.  Configured to send a total of 300 requests per
+  # second to the backend servers.
+  slow_cooker:
+    image: buoyantio/slow_cooker:1.1.0-golang1.8rc2
+    entrypoint: /bin/sh
+    command: >
+      -c 'sleep 15 && slow_cooker -noreuse -metric-addr :8505 -qps 20 -concurrency 15 -interval 5s -totalRequests 10000000 http://server:8501'
+

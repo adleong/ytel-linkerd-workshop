@@ -1,0 +1,25 @@
+# Use the contents of the `disco` directory to find service instances to route to.
+namers:
+- kind: io.l5d.fs
+  rootDir: /disco
+
+# Expose scrapable metrics in Prometheus format
+telemetry:
+- kind: io.l5d.prometheus
+
+routers:
+- protocol: http
+  servers:
+  # Listen on port 4140 for requests to proxy
+  - ip: 0.0.0.0
+    port: 4140
+  # This routing rule sends all requests to instances listed in the `disco/server` file.
+  dtab: /svc/* => /#/io.l5d.fs/server;
+  client:
+    loadBalancer:
+      # The p2c load balancer is a good general purpose load balancing algorithm
+      # that attempts to send requests to the destination with the fewest
+      # currently pending requests.  The ewma load balancer (Expoentially
+      # Weighted Moving Average) is a latency aware load balancing algorithm
+      # that performs better when latency is a good indicator of load.
+      kind: p2c

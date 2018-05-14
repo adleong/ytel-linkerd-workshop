@@ -1,0 +1,17 @@
+namers: []
+admin:
+  port: 9991
+
+routers:
+- protocol: http
+  servers:
+  # Listen on port 4141 for requests to proxy
+  - ip: 0.0.0.0
+    port: 4141
+    # By configuring TLS in the `servers` section, we are telling Linkerd to
+    # expect that all incoming connections will be encrypted with TLS.
+    tls:
+      certPath: # FIXME
+      keyPath: # FIXME
+  # A simple routing rule that sends all traffic to server1
+  dtab: /svc/* => /$/inet/server1/8501

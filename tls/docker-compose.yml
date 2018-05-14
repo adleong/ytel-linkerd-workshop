@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+
+  # A simple backend servers written in Golang that returns passwords in
+  # plaintext.  What could possibly go wrong?
+  server1:
+    build: .
+    ports:
+    - 8501:8501
+
+  # Captures packet data from the network and deocdes it as HTTP.  Prints
+  # HTTP response bodies.
+  tshark:
+    image: opennsm/tshark
+    cap_add:
+    - NET_RAW
+    - NET_ADMIN
+    network_mode: "host"
+    command: [ "tshark", "-qi", "any", "-O", "http", "-f", "tcp port 8501", "-Y", "http.response.code == 200", "-T", "fields", "-e", "text" ]
+
+  # Slow Cooker load generator.  Configured to send a total of 300 requests per
+  # second to the backend server.
+  slow_cooker:
+    image: buoyantio/slow_cooker:1.1.0-golang1.8rc2
+    entrypoint: /bin/sh
+    command: >
+      -c 'sleep 15 && slow_cooker -noreuse -metric-addr :8505 -qps 20 -concurrency 15 -interval 5s -totalRequests 10000000 http://server1:8501'

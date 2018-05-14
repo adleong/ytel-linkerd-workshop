@@ -1,0 +1,115 @@
+version: '2'
+
+services:
+
+  # 10 simple backend servers written in Golang and each started with a
+  # different latency profile.
+  server1:
+    build: .
+    networks:
+      default:
+        aliases:
+         - server
+
+  server2:
+    build: .
+    command: -latency=10ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server3:
+    build: .
+    command: -latency=20ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server4:
+    build: .
+    command: -latency=40ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server5:
+    build: .
+    command: -latency=80ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server6:
+    build: .
+    command: -latency=160ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server7:
+    build: .
+    command: -latency=320ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server8:
+    build: .
+    command: -latency=640ms
+    networks:
+      default:
+        aliases:
+         - server
+
+  server9:
+    build: .
+    command: -latency=1s -success-rate=0.6
+    networks:
+      default:
+        aliases:
+         - server
+
+  server10:
+    build: .
+    command: -latency=2s -success-rate=0.4
+    networks:
+      default:
+        aliases:
+         - server
+
+  # Prometheus instance for collecing metrics
+  prometheus:
+    image: prom/prometheus:v1.4.1
+    volumes:
+      - ./prometheus.yml:/prometheus/prometheus.yml:ro
+    command: >
+      -config.file=/prometheus/prometheus.yml
+      -storage.local.retention=12h
+    ports:
+      - 9090:9090
+
+  # Grafana instance for viewing Prometheus metrics
+  grafana:
+    build:
+      context: .
+      dockerfile: Dockerfile-grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+
+  # Slow Cooker load generator.  Configured to send a total of 500 requests per
+  # second to the backend servers.
+  slow_cooker:
+    image: buoyantio/slow_cooker:1.1.0-golang1.8rc2
+    entrypoint: /bin/sh
+    command: >
+      -c 'sleep 15 && slow_cooker -noreuse -metric-addr :8505 -qps 10 -concurrency 50 -interval 5s -totalRequests 10000000 http://server:8501'
+

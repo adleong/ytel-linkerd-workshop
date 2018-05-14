@@ -1,0 +1,19 @@
+namers: []
+admin:
+  port: 9990
+
+routers:
+- protocol: http
+  servers:
+  # Listen on port 4140 for requests to proxy
+  - ip: 0.0.0.0
+    port: 4140
+  # A simple routing rule that sends all traffic to linkerd-server
+  dtab: /svc/* => /$/inet/linkerd-server/4141
+  client:
+    # By configuring TLS in the `client` section, we are telling Linkerd to
+    # initiate TLS on all outgoing connections it creates.
+    tls:
+      trustCerts:
+      - # FIXME
+      commonName: # FIXME
